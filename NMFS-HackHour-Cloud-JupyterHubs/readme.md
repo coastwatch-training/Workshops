@@ -10,9 +10,9 @@ The March sessions will be 1 hour long 12-1pm PT and start March 8th. Each will 
 
 * March 8th. Let's use the MODIS/Terra Snow Cover Daily L3 Global 0.05Deg via NASA earthdata (Python)
 
-* March 15th. [Coastwatch tutorial (Python)](March-15)
+* March 15th. [Coastwatch tutorial (Python)](15March2024-Python)
 
-* March 22nd. [CoastWatch tutorial (R)](March-22)
+* March 22nd. [CoastWatch tutorial (R)](22March2024-R)
 
 * March 29th. ArcGis with arcgis Python plug-in (Python).
 
