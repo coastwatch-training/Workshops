@@ -8,12 +8,12 @@ What's a JupyterHub? It’s a common way to do computing in the cloud and allows
 
 The March sessions will be 1 hour long 12-1pm PT and start March 8th. Each will be stand-alone. You'll get oriented on using a JupyterHub and start running some geospatial analyses in Python.  Webpage  Sign-Up
 
-* March 8th. Let's use the MODIS/Terra Snow Cover Daily L3 Global 0.05Deg via NASA earthdata (Python)
+* MAR 8, 2024. Let's use the MODIS/Terra Snow Cover Daily L3 Global 0.05Deg via NASA earthdata (Python)
 
-* March 15th. [Coastwatch tutorial (Python)](15March2024-Python)
+* MAR 15, 2024. [Coastwatch tutorial (Python)](15March2024-Python)
 
-* March 22nd. [CoastWatch tutorial (R)](22March2024-R)
+* MAR 22, 2024. [CoastWatch tutorial (R)](22March2024-R)
 
-* March 29th. ArcGis with arcgis Python plug-in (Python).
+* MAR 29. ArcGis with arcgis Python plug-in (Python).
 
 
