@@ -1,0 +1,214 @@
+---
+title: "GOOS Seminar"
+output: html_document
+date: "2024-05-28"
+
+A quick overview of how to bring ERDDAP data into R.  Shows how to do it using just the erddap url to download and read a netcdf file, and then the easier methods using either the rerrdap package or the rerddaXtracto package. Put together for the GOOS ERDDAP seminar series, presentation given June 20, 2024
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries}
+
+library(ncdf4)
+library(httr) 
+```
+
+## Read ERDDAP data into R using the complete url  
+
+```{r brute force force method  - download a netcdf file using the complete ERDDAP url}
+
+url <- 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/NOAA_DHW_monthly.nc?sea_surface_temperature[(2014-01-15T23:00:00Z):1:(2014-03-15T23:00:00Z)][(70):(10)][(-170):(-100)]'
+
+
+download.file(url=url, destfile='erddap.nc') 
+
+# open the ncdf file 
+nc <- nc_open('erddap.nc')
+
+# examine what variables are in the file     
+
+names(nc$var)
+
+# extract the sst data from the netcdf file
+
+v1 <- nc$var[[1]]
+sst <- ncvar_get(nc,v1)
+
+# get the dates and latitude and longitude values associated with the array of sst values 
+sst.dates <- as.POSIXlt(v1$dim[[3]]$vals,origin='1970-01-01',tz='GMT')
+sst.lon <- v1$dim[[1]]$vals
+sst.lat <- v1$dim[[2]]$vals
+
+```
+```{r close netcdf file and remove files }
+
+nc_close(nc)
+file.remove('erddap.nc')
+
+```
+
+The above code looks simple enough, but it can be easy to make a mistake in the long url and have difficulty getting the data as a result.  Next we will use the package rerddap to get the same data  
+
+```{r install rerddap library}
+
+library('rerddap')
+```
+
+```{r get data using rerddap function}
+
+# There are two kinds of data on erddap - gridded datasets and tabular datasets.
+#
+# the griddap function is used for gridded datasets 
+# the tabledap function is used for tabular data 
+
+# First use the info function of rerddap to get information about the dataset. 
+# Information passed to the info function are the dataset id and the base erddap url
+
+dataInfo <- info('NOAA_DHW_monthly', url="coastwatch.pfeg.noaa.gov/erddap")
+
+data1 <- griddap(dataInfo, 
+                 fields = 'sea_surface_temperature',
+                 latitude = c(10,70), 
+                 longitude = c(-170,-100),
+                 time = c('2014-01-15','2014-03-15')) 
+
+# Take a look at the information returned from the call
+
+str(data1)
+```
+The data returned is in list format, and the actual extracted data is is 'melted" form (ie not in a grid) as data1$data. 
+
+```{r look at returned data}
+
+str(data1$data)
+
+```
+
+```{r reformat date variable}
+
+# Note that the returned time variable is in character format, and should be reformatted into a date format
+
+data1$data$time <- as.POSIXlt(data1$data$time,tz='GMT')
+
+```
+
+Next we will use the package rerddapXtracto to get to get the same data.   
+
+```{r install rerddapXtracto library}
+
+library('rerddapXtracto')
+```
+The rerddapXtracto packages uses the rerddap package, and the functions require as input the output from the rerddap::info call, called dataInfo here, which was already defined in the previous example. Note that the arguments names used by the rerddapXtracto routines are different than the argument names used by rerddap (ie parameter versus fields, xcoord versus latitude, etc.) 
+
+```{r Get data using the rxtracto_#D function in rerddapXtracto package}
+
+data2 <- rxtracto_3D(dataInfo, 
+                 parameter = 'sea_surface_temperature',
+                 ycoord = c(10,70), 
+                 xcoord = c(-170,-100),
+                 tcoord = c('2014-01-15','2014-03-15')) 
+
+```
+
+```{r look at data returned from rxtracto_3D}
+
+str(data2)
+
+```
+
+Note that the data returned is in a simplier list than the output from rerddap, and the data is not melted. Also the time variable has been converyted into a time format.  
+
+
+```{r Use rxtractogon function to get a polygon of data}
+
+#define coordinates of a shape, in this case a circle 
+
+xcoord <- -120-5*cos(seq(0,2*pi,length.out=15))
+ycoord <- 5*sin(seq(0,2*pi,length.out=15)) 
+ 
+data3 <- rxtractogon(dataInfo, 
+                 parameter = 'sea_surface_temperature',
+                 xcoord = xcoord, 
+                 ycoord = ycoord,
+                 tcoord = c('2014-01-15','2014-03-15'))
+```
+
+
+```{r Use plotBBox to make a quick graph}
+
+plotBBox(data3)
+
+```
+
+
+```{r use rxtracto to extract data statistics about a set of user supplied locations}
+
+# generate times for each xcoord and ycoord previously defined 
+
+tcoord <- seq(as.Date("2014-01-15"),by = "month",length.out=length(xcoord))
+
+# in rxtracto() xlen and ylen define how big a box around the point to extract data from. 
+# Can be a scalar or a vector (of same size as xcoord and ycoord) 
+ 
+data4 <- rxtracto(dataInfo, 
+                 parameter = 'sea_surface_temperature',
+                 xcoord = xcoord, 
+                 ycoord = ycoord,
+                 tcoord = tcoord, 
+                 xlen=.1, 
+                 ylen=.1)
+```
+
+```{r use PlotTrack to make a quick plot of the output}
+
+plotTrack(data4,xcoord,ycoord,tcoord,size=3,cumulative = T,animate=T)
+
+
+```
+
+```{r Do a data search }
+
+# use ERDDAP search through 'rerddap::ed_search()'
+# copied from https://github.com/rmendels/rollo_scripts/blob/main/03_combine_dataset.md
+
+osmc_erddap <- "https://osmc.noaa.gov/erddap/"
+animals <- rerddap::ed_search("animal", which = "tabledap", url = osmc_erddap)
+head(animals$info)
+
+```
+```{r get animal data using rerrdap::tabledap() function }
+
+df_MEOP_info <- info("MEOP_profiles", url = osmc_erddap )
+df_MEOP2 <- tabledap(df_MEOP_info, 
+               fields = c('latitude', 'longitude', 'time', 'species'),
+               'species="Southern ellie"',
+               'longitude<=90',
+               'longitude>=60',
+               'latitude<=-60',
+                url = osmc_erddap
+               )
+
+```
+```{r convert formats to numeric}
+
+# convert latitude and longitude to numeric
+df_MEOP$latitude <- as.numeric(df_MEOP$latitude)
+df_MEOP$longitude <- as.numeric(df_MEOP$longitude)
+
+# convert time to datetime using 'lubridate::as_datetime()'
+df_MEOP$time <- lubridate::as_datetime(df_MEOP$time)
+
+# and as a factor a year column using 'lubridate::year()'
+df_MEOP$year <- as.factor(lubridate::year(df_MEOP$time))
+
+```
+
+```{r make quick plot with ggplot}
+
+›
+
+```
+
