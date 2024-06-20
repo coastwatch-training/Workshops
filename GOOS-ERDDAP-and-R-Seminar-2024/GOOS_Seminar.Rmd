@@ -164,7 +164,7 @@ data4 <- rxtracto(dataInfo,
 
 ```{r use PlotTrack to make a quick plot of the output}
 
-plotTrack(data4,xcoord,ycoord,tcoord,size=3,cumulative = T,animate=T)
+plotTrack(data4,xcoord,ycoord,tcoord,size=4,cumulative = T,animate=T)
 
 
 ```
@@ -177,12 +177,24 @@ plotTrack(data4,xcoord,ycoord,tcoord,size=3,cumulative = T,animate=T)
 osmc_erddap <- "https://osmc.noaa.gov/erddap/"
 animals <- rerddap::ed_search("animal", which = "tabledap", url = osmc_erddap)
 head(animals$info)
-
 ```
+```{r Get list of species }
+
+# What species are listed in this dataset? 
+
+df_MEOP_info <- info("MEOP_profiles", url = osmc_erddap )
+
+df_MEOP <- tabledap(df_MEOP_info, 
+                     fields = 'species',
+                     url = osmc_erddap)
+
+df_MEOP$species
+```
+
 ```{r get animal data using rerrdap::tabledap() function }
 
 df_MEOP_info <- info("MEOP_profiles", url = osmc_erddap )
-df_MEOP2 <- tabledap(df_MEOP_info, 
+df_MEOP <- tabledap(df_MEOP_info, 
                fields = c('latitude', 'longitude', 'time', 'species'),
                'species="Southern ellie"',
                'longitude<=90',
